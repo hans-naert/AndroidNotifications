@@ -1,8 +1,6 @@
 package com.example.androidnotifications
 
-import android.Manifest.permission.ACCESS_NOTIFICATION_POLICY
 import android.Manifest.permission.POST_NOTIFICATIONS
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -14,7 +12,6 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -30,23 +27,19 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if (Build.VERSION.SDK_INT >= 32) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    ACCESS_NOTIFICATION_POLICY
-                ) == PackageManager.PERMISSION_GRANTED
-            )
-                return;
-            val launcher = registerForActivityResult(ActivityResultContracts.RequestPermission(),
-                { Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show() })
-            launcher.launch(POST_NOTIFICATIONS);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+                    val message = if (isGranted) "Permission granted" else "Permission denied"
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                }.launch(POST_NOTIFICATIONS)
+            }
         }
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel =
             NotificationChannel("normal", "Normal", NotificationManager.IMPORTANCE_DEFAULT)
         manager.createNotificationChannel(channel)
-
 
         binding.sendNoticeButton.setOnClickListener {
             val intent = Intent(this, NotificationActivity::class.java)
